@@ -4,7 +4,7 @@ from stateprocessor import StateProcessor
 
 # globals
 TIME_PERIOD = "5y" # yahoo finance format
-FILENAME = "5y-Analysis-Volume-Test"
+FILENAME = "5y-Analysis-MW-T"
 COMPARE_COL = "Close"
 # LOR = 3
 DATASETS = [
@@ -54,10 +54,11 @@ csv_data = {
         'State': 0,
         'Value': 0
     }
-# tickers = ['VOX','VCR','VDC','VDE','VFH','VHT','VIS','VGT','VAW','VNQ','VPU']
-tickers = ['VOX']
+tickers = ['VOX','VCR','VDC','VDE','VFH','VHT','VIS','VGT','VAW','VNQ','VPU']
+# tickers = ['VOX']
 state_processor_tp = StateProcessor("asset_tp")
 state_processor_tp.write_csv_header(FILENAME)
+
 for ticker in tickers:
     print(f'analyzing {ticker} ...')
     csv_data['Ticker'] = ticker
@@ -98,6 +99,10 @@ for ticker in tickers:
         csv_data['Total_Returns'] = benchmarks['Total_Returns']
         csv_data['Total_Returns_Per'] = benchmarks['Total_Returns_Per']
 
+        # state = "downstate"
+        print('magnitude analysis ...')
+        # np.quantile(.97, returns_dataset)
+
         state = "downstate"
         print('downstate analysis ...')
         csv_data['State'] = state
@@ -107,7 +112,8 @@ for ticker in tickers:
             print(f'calculating downstate analysis for value {value} ...')
             csv_data['Value'] = value
             test_benchmarks = state_processor_tp.calculate_test_benchmarks(lor, state, value)
-            csv_data['P-Value'] = state_processor_tp.calculate_ttest(lor, state, value)
+            csv_data['T-P-Value'] = state_processor_tp.calculate_ttest(lor, state, value)
+            csv_data['MW-P-Value'] = state_processor_tp.calculate_mannwhitneyu(lor, state, value)
             beat_benchmark = csv_data['Total_Returns'] < test_benchmarks['Test_Total_Returns']
             csv_data['Test_LOR_Returns'] = test_benchmarks['Test_LOR_Returns']
             csv_data['Test_LOR_Returns_Per'] = test_benchmarks['Test_LOR_Returns_Per']
@@ -124,7 +130,8 @@ for ticker in tickers:
             print(f'calculating upstate analysis for value {value} ...')
             csv_data['Value'] = value
             test_benchmarks = state_processor_tp.calculate_test_benchmarks(lor, state, value)
-            csv_data['P-Value'] = state_processor_tp.calculate_ttest(lor, state, value)
+            csv_data['T-P-Value'] = state_processor_tp.calculate_ttest(lor, state, value)
+            csv_data['MW-P-Value'] = state_processor_tp.calculate_mannwhitneyu(lor, state, value)
             beat_benchmark = csv_data['Total_Returns'] < test_benchmarks['Test_Total_Returns']
             csv_data['Test_LOR_Returns'] = test_benchmarks['Test_LOR_Returns']
             csv_data['Test_LOR_Returns_Per'] = test_benchmarks['Test_LOR_Returns_Per']
@@ -141,7 +148,8 @@ for ticker in tickers:
             print(f'calculating totalstate analysis for value {value} ...')
             csv_data['Value'] = value
             test_benchmarks = state_processor_tp.calculate_test_benchmarks(lor, state, value)
-            csv_data['P-Value'] = state_processor_tp.calculate_ttest(lor, state, value)
+            csv_data['T-P-Value'] = state_processor_tp.calculate_ttest(lor, state, value)
+            csv_data['MW-P-Value'] = state_processor_tp.calculate_mannwhitneyu(lor, state, value)
             beat_benchmark = csv_data['Total_Returns'] < test_benchmarks['Test_Total_Returns']
             csv_data['Test_LOR_Returns'] = test_benchmarks['Test_LOR_Returns']
             csv_data['Test_LOR_Returns_Per'] = test_benchmarks['Test_LOR_Returns_Per']
@@ -158,7 +166,8 @@ for ticker in tickers:
             print(f'calculating volumestate analysis for value {value} ...')
             csv_data['Value'] = value
             test_benchmarks = state_processor_tp.calculate_test_benchmarks(lor, state, value)
-            csv_data['P-Value'] = state_processor_tp.calculate_ttest(lor, state, value)
+            csv_data['T-P-Value'] = state_processor_tp.calculate_ttest(lor, state, value)
+            csv_data['MW-P-Value'] = state_processor_tp.calculate_mannwhitneyu(lor, state, value)
             beat_benchmark = csv_data['Total_Returns'] < test_benchmarks['Test_Total_Returns']
             csv_data['Test_LOR_Returns'] = test_benchmarks['Test_LOR_Returns']
             csv_data['Test_LOR_Returns_Per'] = test_benchmarks['Test_LOR_Returns_Per']

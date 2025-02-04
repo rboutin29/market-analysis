@@ -4,6 +4,8 @@ Calculates states of a yahoo finance dataframe
 import csv
 import pingouin as pg
 
+from scipy.stats import mannwhitneyu
+
 class StateProcessor():
     '''
     Calculating states of time series data
@@ -178,8 +180,8 @@ class StateProcessor():
                 # ex: lor = 5
                 if index < len(df)-lor:
                     lor_row = df.iloc[index + lor] #5th day
-                    # 5th day close - curr close = return over 5 days? Yes
-                    # can we use df.pct_chg()?
+                    # 5th day close in future - curr close = return over 5 days? Yes
+                    # can we use df.pct_chg()? no, only looks backwards
                     df.at[index, 'lor_returns'] = (
                         lor_row['Close'] - curr_row['Close'])
                     df.at[index, 'lor_returns_per'] = (
@@ -269,7 +271,7 @@ class StateProcessor():
             # )
             writer.writerow(
                 ['Asset','Time Period','Length of Return','State','Value','Avg % Return',
-                 'Avg Return','Total % Return','Total Return','p-value','B-Total % Return',
+                 'Avg Return','Total % Return','Total Return','T-p-value','MW-p-value','B-Total % Return',
                  'B-Total Return','B-LOR Avg % Return','B-LOR Avg Return','Beat Benchmark?',
                  'Occurences'
                  ]
@@ -311,7 +313,7 @@ class StateProcessor():
                     csv_data['Ticker'], csv_data['TimePeriod'], csv_data['LOR'],
                     csv_data['State'], csv_data['Value'], csv_data['Test_LOR_Returns_Per'],
                     csv_data['Test_LOR_Returns'], csv_data['Test_Total_Returns_Per'],
-                    csv_data['Test_Total_Returns'], csv_data['P-Value'],
+                    csv_data['Test_Total_Returns'], csv_data['T-P-Value'], csv_data['MW-P-Value'],
                     csv_data['Total_Returns'], csv_data['Total_Returns_Per'],
                     csv_data['LOR_Returns_Per'], csv_data['LOR_Returns'],
                     beat_benchmark, self.occurences
@@ -351,3 +353,29 @@ class StateProcessor():
         # b_lead = bdf['lead_returns_per'].iloc[:len(self.pdf)-1]
         # lead_results = pg.ttest(tdf['lor_returns_per'], b_lead, alternative = 'greater', paired=False, correction=True)
         # self.lead_pvalue = lead_results.loc[lead_results.index[0], 'p-val']
+
+
+    def calculate_mannwhitneyu(self, lor, state, value):
+        '''
+        perform a mann whiteny u test
+
+        The Mann-Whitney U test is a nonparametric test of the null hypothesis that the distribution
+        underlying sample x is the same as the distribution underlying sample y. It is often
+        used as a test of difference in location between distributions.
+        '''
+        lordf = self.pdf[1:len(self.pdf)-lor]
+        # drop all rows that are not the target state
+        tdf = lordf.drop(lordf[lordf[state] != value].index)
+        # need to drop target state rows for independent t-test
+        # drop all rows that ARE the target state
+        bdf = self.pdf.drop(self.pdf[self.pdf[state] == value].index)
+        # t-test against returns (not based on state)
+        b = bdf['lor_returns_per'].iloc[:len(self.pdf)-1]
+        # degrees of freedom (or sample size - 1) cannot be 0
+        if len(tdf) != 1:
+            U1, pvalue = mannwhitneyu(tdf['lor_returns_per'], b, method="asymptotic")
+        else:
+            print('throwing out case because sample size is 1')
+            # self.pvalue = 1
+            pvalue = 1
+        return pvalue
